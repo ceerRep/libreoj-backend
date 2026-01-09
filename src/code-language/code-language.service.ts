@@ -7,6 +7,7 @@ import { CodeLanguage } from "./code-language.type";
 
 import CompileAndRunOptionsCpp from "./compile-and-run-options/cpp";
 import CompileAndRunOptionsC from "./compile-and-run-options/c";
+import CompileAndRunOptionsCuda from "./compile-and-run-options/cuda";
 import CompileAndRunOptionsJava from "./compile-and-run-options/java";
 import CompileAndRunOptionsKotlin from "./compile-and-run-options/kotlin";
 import CompileAndRunOptionsPascal from "./compile-and-run-options/pascal";
@@ -21,6 +22,7 @@ import CompileAndRunOptionsFSharp from "./compile-and-run-options/fsharp";
 const CompileAndRunOptionsClasses = {
   [CodeLanguage.Cpp]: CompileAndRunOptionsCpp,
   [CodeLanguage.C]: CompileAndRunOptionsC,
+  [CodeLanguage.Cuda]: CompileAndRunOptionsCuda,
   [CodeLanguage.Java]: CompileAndRunOptionsJava,
   [CodeLanguage.Kotlin]: CompileAndRunOptionsKotlin,
   [CodeLanguage.Pascal]: CompileAndRunOptionsPascal,

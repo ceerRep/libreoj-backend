@@ -1,6 +1,7 @@
 export enum CodeLanguage {
   Cpp = "cpp",
   C = "c",
+  Cuda = "cuda",
   Java = "java",
   Kotlin = "kotlin",
   Pascal = "pascal",

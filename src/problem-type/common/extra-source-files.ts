@@ -3,9 +3,10 @@
 import { CodeLanguage } from "@/code-language/code-language.type";
 import { isValidFilename } from "@/common/validators";
 import { ProblemFileEntity } from "@/problem/problem-file.entity";
+import { restrictProperties } from "./restrict-properties";
 
 interface JudgeInfoWithExtraSourceFiles {
-  extraSourceFiles?: Partial<Record<CodeLanguage, Record<string, string>>>;
+  extraSourceFiles?: Partial<Record<CodeLanguage, {files: Record<string, string>, flags: string[]}>>;
 }
 
 export function validateExtraSourceFiles(
@@ -15,16 +16,25 @@ export function validateExtraSourceFiles(
   if (judgeInfo.extraSourceFiles) {
     if (typeof judgeInfo.extraSourceFiles !== "object") throw ["INVALID_EXTRA_SOURCE_FILES"];
 
-    Object.entries(judgeInfo.extraSourceFiles).forEach(([codeLanguage, files]) => {
+    Object.entries(judgeInfo.extraSourceFiles).forEach(([codeLanguage, content]) => {
       if (!Object.values(CodeLanguage).includes(codeLanguage as CodeLanguage))
         throw ["INVALID_EXTRA_SOURCE_FILES_LANGUAGE"];
-      if (typeof files !== "object") throw ["INVALID_EXTRA_SOURCE_FILES"];
+      const { files, flags } = content;
 
-      Object.entries(files).forEach(([dst, src], i) => {
+      restrictProperties(content, ["files", "flags"]);
+
+      if (files !== undefined && typeof files !== "object") throw ["INVALID_EXTRA_SOURCE_FILES"];
+
+      Object.entries(files || {}).forEach(([dst, src], i) => {
         if (typeof dst !== "string" || !isValidFilename(dst))
           throw ["INVALID_EXTRA_SOURCE_FILES_DST", codeLanguage, i + 1, dst];
         if (!testData.some(file => file.filename === src))
           throw ["NO_SUCH_EXTRA_SOURCE_FILES_SRC", codeLanguage, i + 1, src];
+      });
+
+      if (flags !== undefined && !Array.isArray(flags)) throw ["INVALID_EXTRA_SOURCE_FILES"];
+      flags?.forEach((flag, i) => {
+        if (typeof flag !== "string") throw ["INVALID_EXTRA_SOURCE_FILES_FLAG", codeLanguage, i + 1, flag];
       });
     });
   }

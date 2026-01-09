@@ -69,5 +69,5 @@ export interface ProblemJudgeInfoInteraction extends ProblemJudgeInfo {
   };
 
   // The map of files to be copied to the source code directory when compileing for each code language
-  extraSourceFiles?: Partial<Record<CodeLanguage, Record<string, string>>>;
+  extraSourceFiles?: Partial<Record<CodeLanguage, {files: Record<string, string>, flags: string[]}>>;
 }

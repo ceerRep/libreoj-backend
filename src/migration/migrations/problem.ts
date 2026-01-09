@@ -447,8 +447,9 @@ async function parseJudgeInfo(
         for (const entry of oldConfig.extraSourceFiles) {
           const { language } = getLanguageAndOptions(entry.language, `problem ${displayProblem(oldProblem)}`) || {};
           if (!language || language in extraSourceFiles) continue;
-          extraSourceFiles[language] = Object.fromEntries(
-            entry.files
+          extraSourceFiles[language] = {
+            files: Object.fromEntries(
+              entry.files
               .filter(({ dest }) => {
                 if (!isValidFilename(dest)) {
                   Logger.warn(
@@ -462,7 +463,9 @@ async function parseJudgeInfo(
                 return true;
               })
               .map(({ name, dest }) => [dest, name])
-          );
+            ),
+            flags: []
+          }
         }
       }
     }
