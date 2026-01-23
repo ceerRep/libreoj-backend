@@ -9,15 +9,17 @@ import { AuditModule } from "@/audit/audit.module";
 import { MigrationModule } from "@/migration/migration.module";
 
 import { UserAuthEntity } from "./user-auth.entity";
+import { UserApiTokenEntity } from "./user-api-token.entity";
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { AuthEmailVerificationCodeService } from "./auth-email-verification-code.service";
 import { AuthSessionService } from "./auth-session.service";
 import { AuthIpLocationService } from "./auth-ip-location.service";
+import { AuthApiTokenService } from "./auth-api-token.service";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserAuthEntity]),
+    TypeOrmModule.forFeature([UserAuthEntity, UserApiTokenEntity]),
     forwardRef(() => UserModule),
     forwardRef(() => GroupModule),
     forwardRef(() => RedisModule),
@@ -25,8 +27,20 @@ import { AuthIpLocationService } from "./auth-ip-location.service";
     forwardRef(() => AuditModule),
     forwardRef(() => MigrationModule)
   ],
-  providers: [AuthService, AuthEmailVerificationCodeService, AuthSessionService, AuthIpLocationService],
+  providers: [
+    AuthService,
+    AuthEmailVerificationCodeService,
+    AuthSessionService,
+    AuthIpLocationService,
+    AuthApiTokenService
+  ],
   controllers: [AuthController],
-  exports: [AuthService, AuthEmailVerificationCodeService, AuthSessionService, AuthIpLocationService]
+  exports: [
+    AuthService,
+    AuthEmailVerificationCodeService,
+    AuthSessionService,
+    AuthIpLocationService,
+    AuthApiTokenService
+  ]
 })
 export class AuthModule {}

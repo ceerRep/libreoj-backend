@@ -125,7 +125,21 @@ export class AuditService {
       auditLog.secondObjectId = secondObjectId;
     }
 
-    auditLog.details = details;
+    // If the request was authenticated via API token, add token information to details
+    let finalDetails = details;
+    if (req?.session?.apiTokenEntity) {
+      const tokenInfo = {
+        tokenUUID: req.session.apiTokenEntity.id,
+        tokenName: req.session.apiTokenEntity.name
+      };
+
+      finalDetails = {
+        tokenInfo,
+        details
+      };
+    }
+
+    auditLog.details = finalDetails;
 
     await this.auditLogRepository.save(auditLog);
   }

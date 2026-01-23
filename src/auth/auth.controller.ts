@@ -19,6 +19,7 @@ import { delay, DELAY_FOR_SECURITY } from "@/common/delay";
 import { AuthEmailVerificationCodeService, EmailVerificationCodeType } from "./auth-email-verification-code.service";
 import { AuthSessionService } from "./auth-session.service";
 import { AuthIpLocationService } from "./auth-ip-location.service";
+import { AuthApiTokenService } from "./auth-api-token.service";
 import { RequestWithSession } from "./auth.middleware";
 import { AuthService } from "./auth.service";
 
@@ -44,7 +45,16 @@ import {
   ListUserSessionsResponseError,
   RevokeUserSessionRequestDto,
   RevokeUserSessionResponseDto,
-  RevokeUserSessionResponseError
+  RevokeUserSessionResponseError,
+  CreateApiTokenRequestDto,
+  CreateApiTokenResponseDto,
+  ListApiTokensRequestDto,
+  ListApiTokensResponseDto,
+  DeleteApiTokenRequestDto,
+  DeleteApiTokenResponseDto,
+  DeleteApiTokenResponseError,
+  CreateApiTokenResponseError,
+  ListApiTokensResponseError
 } from "./dto";
 
 // Refer to auth.middleware.ts for req.session
@@ -62,6 +72,7 @@ export class AuthController {
     private readonly mailService: MailService,
     private readonly authSessionService: AuthSessionService,
     private readonly authIpLocationService: AuthIpLocationService,
+    private readonly authApiTokenService: AuthApiTokenService,
     private readonly auditService: AuditService,
     private readonly userMigrationService: UserMigrationService
   ) {}
@@ -448,6 +459,210 @@ export class AuthController {
         await this.auditService.log("auth.session.revoke_others_all", AuditLogObjectType.User, request.userId);
       }
     }
+
+    return {};
+  }
+
+  @Post("createApiToken")
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Create a new API token for the specified user.",
+    description: "The token will be returned only once. Store it securely. Regular users can only create tokens for themselves."
+  })
+  async createApiToken(
+    @CurrentUser() currentUser: UserEntity,
+    @Body() request: CreateApiTokenRequestDto
+  ): Promise<CreateApiTokenResponseDto> {
+    const MAX_API_TOKENS = 20;
+    if (!currentUser) {
+      return {
+        error: CreateApiTokenResponseError.PERMISSION_DENIED,
+        token: null,
+        tokenUUID: null,
+        name: null,
+        createdAt: null
+      };
+    }
+
+    // Find target user
+    const targetUser = await this.userService.findUserByUsername(request.username);
+    if (!targetUser) {
+      return {
+        error: CreateApiTokenResponseError.PERMISSION_DENIED,
+        token: null,
+        tokenUUID: null,
+        name: null,
+        createdAt: null
+      };
+    }
+
+    // Check permission: regular users can only create token for themselves
+    if (targetUser.id !== currentUser.id) {
+      if (!(await this.userPrivilegeService.userHasPrivilege(currentUser, UserPrivilegeType.ManageUser))) {
+        return {
+          error: CreateApiTokenResponseError.PERMISSION_DENIED,
+          token: null,
+          tokenUUID: null,
+          name: null,
+          createdAt: null
+        };
+      }
+    }
+
+    let token: string;
+    let entity: { id: string; name: string; createdAt: Date };
+    try {
+      [token, entity] = await this.authApiTokenService.generateTokenWithLimitCheck(
+        targetUser.id,
+        request.name,
+        MAX_API_TOKENS
+      );
+    } catch (error) {
+      if (error.message === "TOO_MANY_TOKENS") {
+        return {
+          error: CreateApiTokenResponseError.TOO_MANY_TOKENS,
+          token: null,
+          tokenUUID: null,
+          name: null,
+          createdAt: null
+        };
+      }
+      throw error;
+    }
+
+    await this.auditService.log(
+      currentUser.id,
+      "auth.api_token.create",
+      AuditLogObjectType.User,
+      targetUser.id,
+      {
+        tokenId: entity.id,
+        name: request.name,
+        username: request.username
+      }
+    );
+
+    return {
+      token,
+      tokenUUID: entity.id,
+      name: entity.name,
+      createdAt: entity.createdAt
+    };
+  }
+
+  @Post("listApiTokens")
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "List all API tokens for the specified user.",
+    description: "Regular users can only list their own tokens."
+  })
+  async listApiTokens(
+    @CurrentUser() currentUser: UserEntity,
+    @Body() request: ListApiTokensRequestDto
+  ): Promise<ListApiTokensResponseDto> {
+    if (!currentUser) {
+      return {
+        error: ListApiTokensResponseError.PERMISSION_DENIED,
+        tokens: []
+      };
+    }
+
+    // Find target user
+    const targetUser = await this.userService.findUserByUsername(request.username);
+    if (!targetUser) {
+      return {
+        error: ListApiTokensResponseError.PERMISSION_DENIED,
+        tokens: []
+      };
+    }
+
+    // Check permission: regular users can only list their own tokens
+    if (targetUser.id !== currentUser.id) {
+      if (!(await this.userPrivilegeService.userHasPrivilege(currentUser, UserPrivilegeType.ManageUser))) {
+        return {
+          error: ListApiTokensResponseError.PERMISSION_DENIED,
+          tokens: []
+        };
+      }
+    }
+
+    const tokens = await this.authApiTokenService.listUserTokens(targetUser.id);
+
+    return {
+      tokens: tokens.map(token => ({
+        id: token.id,
+        name: token.name,
+        createdAt: token.createdAt,
+        lastUsedAt: token.lastUsedAt
+      }))
+    };
+  }
+
+  @Post("deleteApiToken")
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: "Delete an API token by UUID."
+  })
+  async deleteApiToken(
+    @CurrentUser() currentUser: UserEntity,
+    @Body() request: DeleteApiTokenRequestDto
+  ): Promise<DeleteApiTokenResponseDto> {
+    if (!currentUser) {
+      return {
+        error: DeleteApiTokenResponseError.PERMISSION_DENIED
+      };
+    }
+
+    // Find the token to check ownership
+    const tokenEntity = await this.authApiTokenService.findTokenByUUID(request.tokenUUID);
+    if (!tokenEntity) {
+      return {
+        error: DeleteApiTokenResponseError.NO_SUCH_TOKEN
+      };
+    }
+
+    // Find target user
+    const targetUser = await this.userService.findUserByUsername(request.username);
+    if (!targetUser) {
+      return {
+        error: DeleteApiTokenResponseError.PERMISSION_DENIED
+      };
+    }
+
+    // Verify the token belongs to the specified user
+    if (tokenEntity.userId !== targetUser.id) {
+      return {
+        error: DeleteApiTokenResponseError.PERMISSION_DENIED
+      };
+    }
+
+    // Check permission: regular users can only delete their own tokens
+    if (targetUser.id !== currentUser.id) {
+      if (!(await this.userPrivilegeService.userHasPrivilege(currentUser, UserPrivilegeType.ManageUser))) {
+        return {
+          error: DeleteApiTokenResponseError.PERMISSION_DENIED
+        };
+      }
+    }
+
+    const deleted = await this.authApiTokenService.deleteToken(targetUser.id, request.tokenUUID);
+    if (!deleted) {
+      return {
+        error: DeleteApiTokenResponseError.NO_SUCH_TOKEN
+      };
+    }
+
+    await this.auditService.log(
+      currentUser.id,
+      "auth.api_token.delete",
+      AuditLogObjectType.User,
+      targetUser.id,
+      {
+        username: request.username,
+        tokenId: request.tokenUUID,
+        tokenname: tokenEntity.name
+      }
+    );
 
     return {};
   }

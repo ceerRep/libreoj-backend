@@ -21,3 +21,10 @@ export * from "./list-user-sessions-response.dto";
 
 export * from "./revoke-user-session-request.dto";
 export * from "./revoke-user-session-response.dto";
+
+export * from "./create-api-token-request.dto";
+export * from "./create-api-token-response.dto";
+export * from "./list-api-tokens-request.dto";
+export * from "./list-api-tokens-response.dto";
+export * from "./delete-api-token-request.dto";
+export * from "./delete-api-token-response.dto";
