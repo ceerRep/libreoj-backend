@@ -28,7 +28,7 @@
     "@nestjs/core": "^9.0.7",
     "@nestjs/platform-express": "^9.0.7",
     "@nestjs/platform-socket.io": "^9.0.7",
-    "@nestjs/swagger": "^6.0.4",
+    "@nestjs/swagger": "^7.4.2",
     "@nestjs/typeorm": "^9.0.0",
     "@nestjs/websockets": "^9.0.7",
     "@nestlab/google-recaptcha": "^3.0.1",
