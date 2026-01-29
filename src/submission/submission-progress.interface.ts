@@ -26,6 +26,7 @@ export interface SubmissionProgress<TestcaseResult extends SubmissionTestcaseRes
   // Only valid when finished
   status?: SubmissionStatus;
   score?: number;
+  displayScore?: number;
   totalOccupiedTime?: number;
 
   compile?: {
@@ -43,6 +44,7 @@ export interface SubmissionProgress<TestcaseResult extends SubmissionTestcaseRes
   samples?: TestcaseProgressReference[];
   subtasks?: {
     score: number;
+    displayScore?: number;
     fullScore: number;
     testcases: TestcaseProgressReference[];
   }[];

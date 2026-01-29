@@ -295,6 +295,7 @@ export const migrationSubmission: MigrationInterface = {
           ? oldSubmission.code_length
           : Buffer.byteLength(oldSubmission.code, "utf-8");
         submission.score = Math.max(0, Math.min(oldSubmission.score, 100));
+        submission.displayScore = submission.score;
         submission.status = convertSubmissionStatus(oldSubmission.status);
         submission.submitTime = new Date(oldSubmission.submit_time * 1000);
         submission.problemId = oldSubmission.problem_id;

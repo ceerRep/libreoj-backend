@@ -24,6 +24,9 @@ export class SubmissionBasicMetaDto {
   @ApiProperty()
   score: number;
 
+  @ApiProperty()
+  displayScore: number;
+
   @ApiProperty({ enum: SubmissionStatus })
   status: SubmissionStatus;
 

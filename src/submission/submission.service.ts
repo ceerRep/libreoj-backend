@@ -370,6 +370,7 @@ export class SubmissionService implements JudgeTaskService<SubmissionProgress, S
       submission.codeLanguage = pair.language;
       submission.answerSize = pair.answerSize;
       submission.score = null;
+      submission.displayScore = null;
       submission.status = SubmissionStatus.Pending;
       submission.submitTime = new Date();
       submission.problemId = problem.id;
@@ -409,6 +410,7 @@ export class SubmissionService implements JudgeTaskService<SubmissionProgress, S
       codeLanguage: submission.codeLanguage,
       answerSize: submission.answerSize,
       score: submission.score,
+      displayScore: submission.displayScore,
       status: submission.status,
       submitTime: submission.submitTime,
       timeUsed: submission.timeUsed,
@@ -485,6 +487,7 @@ export class SubmissionService implements JudgeTaskService<SubmissionProgress, S
 
     submission.taskId = uuid();
     submission.score = null;
+    submission.displayScore = null;
     submission.status = SubmissionStatus.Pending;
     submission.timeUsed = null;
     submission.memoryUsed = null;
@@ -582,6 +585,7 @@ export class SubmissionService implements JudgeTaskService<SubmissionProgress, S
 
       submission.taskId = null;
       submission.score = null;
+      submission.displayScore = null;
       submission.status = SubmissionStatus.Canceled;
       submission.timeUsed = null;
       submission.memoryUsed = null;
@@ -677,6 +681,7 @@ export class SubmissionService implements JudgeTaskService<SubmissionProgress, S
     submission.taskId = null;
     submission.status = progress.status;
     submission.score = progress.score;
+    submission.displayScore = progress.displayScore;
     submission.totalOccupiedTime = progress.totalOccupiedTime;
 
     this.metricSubmissionJudgeTime.observe(submission.totalOccupiedTime);

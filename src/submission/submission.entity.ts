@@ -1,10 +1,21 @@
-import { Entity, PrimaryGeneratedColumn, Index, ManyToOne, Column, JoinColumn, OneToOne } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, ValueTransformer, Index, ManyToOne, Column, JoinColumn, OneToOne } from "typeorm";
 
 import { UserEntity } from "@/user/user.entity";
 import { ProblemEntity } from "@/problem/problem.entity";
 
 import { SubmissionStatus } from "./submission-status.enum";
 import { SubmissionDetailEntity } from "./submission-detail.entity";
+
+export const scoreTransformer: ValueTransformer = {
+  to: (value?: number | null) => {
+    if (value === null || value === undefined) return value;
+    return Math.round(value * 100); 
+  },
+  from: (value?: number | null) => {
+    if (value === null || value === undefined) return value;
+    return value / 100; 
+  },
+};
 
 @Entity("submission")
 @Index(["isPublic", "problemId", "submitterId", "status", "codeLanguage"])
@@ -49,6 +60,9 @@ export class SubmissionEntity {
   @Column({ type: "integer", nullable: true })
   @Index()
   score: number;
+
+  @Column({ type: "integer", nullable: true, transformer: scoreTransformer })
+  displayScore: number;
 
   @Column({ type: "enum", enum: SubmissionStatus })
   @Index()
