@@ -27,7 +27,10 @@ export function IsIntString(validationOptions?: ValidationOptions) {
 // class-validator's IsPort accepts strings only, but I prefer
 // writting port numbers as number
 export function IsPortNumber(validationOptions?: ValidationOptions) {
-  return If(value => Number.isInteger(value) && value >= 1 && value <= 65535, validationOptions);
+  return If(
+    (value: unknown) => typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 65535,
+    validationOptions
+  );
 }
 
 // A username is a string of 3 ~ 24 ASCII characters, and each character
@@ -71,4 +74,36 @@ export function isEmoji(str: string) {
 
 export function IsEmoji(validationOptions?: ValidationOptions) {
   return If(value => typeof value === "string" && isEmoji(value), validationOptions);
+}
+
+// 验证代码语言（包括基础语言和方言）
+// 这个验证器需要配合CodeDialectService使用
+export function IsCodeLanguageOrDialect(validationOptions?: ValidationOptions) {
+  return If(
+    (value: unknown) => {
+      if (typeof value !== "string") return false;
+      // 基础语言列表
+      const baseLanguages = [
+        "cpp",
+        "c",
+        "cuda",
+        "java",
+        "kotlin",
+        "pascal",
+        "python",
+        "swift",
+        "rust",
+        "go",
+        "haskell",
+        "csharp",
+        "fsharp"
+      ];
+      // 如果是基础语言，直接返回true
+      if (baseLanguages.includes(value)) return true;
+      // 方言验证将在运行时通过CodeDialectService进行
+      // 这里只做基本格式检查（非空字符串）
+      return value.length > 0 && value.length <= 50;
+    },
+    validationOptions
+  );
 }

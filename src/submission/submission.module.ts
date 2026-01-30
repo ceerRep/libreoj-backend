@@ -9,6 +9,7 @@ import { UserModule } from "@/user/user.module";
 import { AuditModule } from "@/audit/audit.module";
 import { FileModule } from "@/file/file.module";
 import { MetricsModule } from "@/metrics/metrics.module";
+import { CodeLanguageModule } from "@/code-language/code-language.module";
 
 import { SubmissionEntity } from "./submission.entity";
 import { SubmissionDetailEntity } from "./submission-detail.entity";
@@ -29,7 +30,8 @@ import { SubmissionStatisticsService } from "./submission-statistics.service";
     forwardRef(() => UserModule),
     forwardRef(() => AuditModule),
     forwardRef(() => FileModule),
-    forwardRef(() => MetricsModule)
+    forwardRef(() => MetricsModule),
+    CodeLanguageModule
   ],
   providers: [SubmissionService, SubmissionProgressService, SubmissionProgressGateway, SubmissionStatisticsService],
   controllers: [SubmissionController],

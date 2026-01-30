@@ -89,6 +89,8 @@ preference:
   serverSideOnly:
     discussionReactionCustomEmojisBlacklist: /(\uD83C[\uDDE6-\uDDFF]){2}/
     dynamicTaskPriority: true
+  codeDialects:
+    dialects: []
 resourceLimit:
   problemTestdataFiles: 40
   problemTestdataSize: 134217728

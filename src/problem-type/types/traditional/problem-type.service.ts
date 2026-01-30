@@ -7,6 +7,8 @@ import { ConfigService } from "@/config/config.service";
 import { ProblemFileEntity } from "@/problem/problem-file.entity";
 import { SubmissionProgress } from "@/submission/submission-progress.interface";
 import { CodeLanguageService } from "@/code-language/code-language.service";
+import { CodeDialectService } from "@/code-language/code-dialect.service";
+import { CodeLanguage } from "@/code-language/code-language.type";
 import { validateMetaAndSubtasks } from "@/problem-type/common/meta-and-subtasks";
 import { validateChecker } from "@/problem-type/common/checker";
 import { validateExtraSourceFiles } from "@/problem-type/common/extra-source-files";
@@ -28,7 +30,11 @@ export class ProblemTypeTraditionalService
       SubmissionTestcaseResultTraditional
     >
 {
-  constructor(private configService: ConfigService, private codeLanguageService: CodeLanguageService) {}
+  constructor(
+    private configService: ConfigService,
+    private codeLanguageService: CodeLanguageService,
+    private codeDialectService: CodeDialectService
+  ) {}
 
   getDefaultJudgeInfo(): ProblemJudgeInfoTraditional {
     return {
@@ -106,6 +112,22 @@ export class ProblemTypeTraditionalService
       forbidNonWhitelisted: true
     });
     if (errors.length > 0) return errors;
+
+    // 验证语言是否为有效的基础语言或方言
+    const baseLanguages = Object.values(CodeLanguage);
+    const isValidLanguage =
+      baseLanguages.includes(submissionContent.language as CodeLanguage) ||
+      this.codeDialectService.isDialect(submissionContent.language);
+    if (!isValidLanguage) {
+      return [
+        {
+          property: "language",
+          constraints: { invalidLanguage: `Invalid language or dialect: ${submissionContent.language}` },
+          children: []
+        } as ValidationError
+      ];
+    }
+
     return this.codeLanguageService.validateCompileAndRunOptions(
       submissionContent.language,
       submissionContent.compileAndRunOptions

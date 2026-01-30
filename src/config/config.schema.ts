@@ -372,6 +372,29 @@ class PreferenceConfigMisc {
   readonly discussionReactionAllowCustomEmojis: boolean;
 }
 
+class CodeDialectConfig {
+  @IsString()
+  @ApiProperty()
+  readonly name: string;
+
+  @IsString()
+  @ApiProperty()
+  readonly displayName: string;
+
+  @IsString()
+  @ApiProperty()
+  readonly parentLanguage: string;
+}
+
+class PreferenceConfigCodeDialects {
+  @ValidateNested({ each: true })
+  @Type(() => CodeDialectConfig)
+  @IsArray()
+  @IsOptional()
+  @ApiProperty({ type: [CodeDialectConfig] })
+  readonly dialects?: CodeDialectConfig[];
+}
+
 class PreferenceConfigServerSideOnly {
   @If((blacklist: string | unknown[]) =>
     (function validate(value: string | unknown[]) {
@@ -406,6 +429,11 @@ export class PreferenceConfig {
   @Type(() => PreferenceConfigMisc)
   @ApiProperty()
   readonly misc: PreferenceConfigMisc;
+
+  @ValidateNested()
+  @Type(() => PreferenceConfigCodeDialects)
+  @ApiProperty()
+  readonly codeDialects?: PreferenceConfigCodeDialects;
 
   @ValidateNested()
   @Type(() => PreferenceConfigServerSideOnly)

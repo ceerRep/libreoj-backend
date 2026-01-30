@@ -4,6 +4,7 @@ import { ValidationError, validateSync } from "class-validator";
 import { plainToClass } from "class-transformer";
 
 import { CodeLanguage } from "./code-language.type";
+import { CodeDialectService } from "./code-dialect.service";
 
 import CompileAndRunOptionsCpp from "./compile-and-run-options/cpp";
 import CompileAndRunOptionsC from "./compile-and-run-options/c";
@@ -37,8 +38,26 @@ const CompileAndRunOptionsClasses = {
 
 @Injectable()
 export class CodeLanguageService {
-  validateCompileAndRunOptions(language: CodeLanguage, compileAndRunOptions: unknown): ValidationError[] {
-    return validateSync(plainToClass(CompileAndRunOptionsClasses[language], compileAndRunOptions), {
+  constructor(private readonly codeDialectService: CodeDialectService) {}
+
+  validateCompileAndRunOptions(language: CodeLanguage | string, compileAndRunOptions: unknown): ValidationError[] {
+    // 如果是方言，使用父语言的验证类
+    const actualLanguage = this.codeDialectService.isDialect(language)
+      ? (this.codeDialectService.getParentLanguage(language) as CodeLanguage)
+      : (language as CodeLanguage);
+
+    const OptionsClass = CompileAndRunOptionsClasses[actualLanguage];
+    if (!OptionsClass) {
+      return [
+        {
+          property: "language",
+          constraints: { invalidLanguage: `Unknown language: ${language}` },
+          children: []
+        } as ValidationError
+      ];
+    }
+
+    return validateSync(plainToClass(OptionsClass, compileAndRunOptions), {
       whitelist: true,
       forbidNonWhitelisted: true
     });

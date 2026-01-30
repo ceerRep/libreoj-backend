@@ -42,6 +42,7 @@ import { SubmissionDetailEntity } from "./submission-detail.entity";
 import { SubmissionStatus } from "./submission-status.enum";
 
 import { FileUploadInfoDto, SignedFileUploadRequestDto } from "@/file/dto";
+import { CodeDialectService } from "@/code-language/code-dialect.service";
 
 import { SubmissionBasicMetaDto } from "./dto";
 
@@ -133,7 +134,8 @@ export class SubmissionService implements JudgeTaskService<SubmissionProgress, S
     private readonly configService: ConfigService,
     @Inject(forwardRef(() => UserPrivilegeService))
     private readonly userPrivilegeService: UserPrivilegeService,
-    private readonly metricsService: MetricsService
+    private readonly metricsService: MetricsService,
+    private readonly codeDialectService: CodeDialectService
   ) {
     this.judgeQueueService.registerTaskType(JudgeTaskType.Submission, this);
 
@@ -745,6 +747,20 @@ export class SubmissionService implements JudgeTaskService<SubmissionProgress, S
 
       const problemTypeService = this.problemTypeFactoryService.type(problem.type);
 
+      // 检查并转换方言为父语言
+      let submissionContent = submissionDetail.content as SubmissionContent;
+      if (submissionContent && typeof submissionContent === "object" && "language" in submissionContent) {
+        const language = (submissionContent as { language?: string }).language;
+        if (language && this.codeDialectService.isDialect(language)) {
+          const parentLanguage = this.codeDialectService.getParentLanguage(language);
+          submissionContent = {
+            ...submissionContent,
+            language: parentLanguage,
+            dialect: language
+          };
+        }
+      }
+
       return new JudgeTask<SubmissionTaskExtraInfo>(
         submission.taskId,
         JudgeTaskType.Submission,
@@ -762,7 +778,7 @@ export class SubmissionService implements JudgeTaskService<SubmissionProgress, S
                 )
               : null,
           testData: Object.fromEntries(testData.map(problemFile => [problemFile.filename, problemFile.uuid])),
-          submissionContent: submissionDetail.content,
+          submissionContent,
           file: problemTypeService.shouldUploadAnswerFile()
             ? {
                 uuid: submissionDetail.fileUuid,
